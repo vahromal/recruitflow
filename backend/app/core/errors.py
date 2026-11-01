@@ -5,12 +5,30 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.exc import IntegrityError
 
 
+def _json_safe(value, depth: int = 0):
+    """Make error details JSON-serializable.
+
+    Pydantic validation errors keep the raw exception in `ctx` (e.g. a ValueError
+    raised by a custom validator). Passing it straight to JSONResponse raised
+    TypeError -> the error handler itself failed with HTTP 500 instead of 422.
+    """
+    if depth > 8:
+        return str(value)
+    if value is None or isinstance(value, (str, int, float, bool)):
+        return value
+    if isinstance(value, (list, tuple)):
+        return [_json_safe(v, depth + 1) for v in value]
+    if isinstance(value, dict):
+        return {str(k): _json_safe(v, depth + 1) for k, v in value.items()}
+    return str(value)
+
+
 def error_response(
     status_code: int, code: str, message: str, details: object = None
 ) -> JSONResponse:
     body: dict = {"error": {"code": code, "message": message}}
     if details is not None:
-        body["error"]["details"] = details
+        body["error"]["details"] = _json_safe(details)
     return JSONResponse(status_code=status_code, content=body)
 
 

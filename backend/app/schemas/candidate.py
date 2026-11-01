@@ -1,7 +1,9 @@
 """Pydantic schemas for candidates."""
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+from app.core.schemas import Email
 
 
 def normalize_phone(v: str | None) -> str | None:
@@ -15,7 +17,7 @@ def normalize_phone(v: str | None) -> str | None:
 class CandidateBase(BaseModel):
     full_name: str = Field(min_length=1, max_length=255)
     phone: str | None = Field(default=None, max_length=50)
-    email: EmailStr | None = None
+    email: Email | None = None
     city: str | None = Field(default=None, max_length=128)
     position: str | None = Field(default=None, max_length=255)
     company: str | None = Field(default=None, max_length=255)
@@ -36,10 +38,11 @@ class CandidateBase(BaseModel):
 class CandidateCreate(CandidateBase):
     pass
 
+
 class CandidateUpdate(BaseModel):
     full_name: str | None = Field(default=None, min_length=1, max_length=255)
     phone: str | None = Field(default=None, max_length=50)
-    email: EmailStr | None = None
+    email: Email | None = None
     city: str | None = Field(default=None, max_length=128)
     position: str | None = Field(default=None, max_length=255)
     company: str | None = Field(default=None, max_length=255)
