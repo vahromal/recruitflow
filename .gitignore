@@ -28,3 +28,8 @@ dist/
 *.log
 uploads/
 data/
+
+# tsc build artifacts
+*.tsbuildinfo
+vite.config.js
+vite.config.d.ts

@@ -1,9 +1,16 @@
 # Production stack: db + backend + frontend + caddy (HTTPS)
 # Run: docker compose -f docker-compose.prod.yml up -d --build
 name: recruitflow
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "5"
+
 services:
   db:
     image: postgres:16-alpine
+    logging: *default-logging
     environment:
       POSTGRES_USER: ${POSTGRES_USER:?set in .env}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set in .env}
@@ -20,6 +27,7 @@ services:
 
   backend:
     build: ./backend
+    logging: *default-logging
     environment:
       ENVIRONMENT: prod
       DEBUG: "false"
@@ -51,12 +59,17 @@ services:
 
   frontend:
     build: ./frontend
+    logging: *default-logging
     expose:
       - "80"
     restart: unless-stopped
 
   caddy:
     image: caddy:2-alpine
+    logging: *default-logging
+    environment:
+      DOMAIN: ${DOMAIN:?set in .env}
+      EMAIL: ${EMAIL:-admin@example.com}
     ports:
       - "80:80"
       - "443:443"

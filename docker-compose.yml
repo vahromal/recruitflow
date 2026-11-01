@@ -1,8 +1,15 @@
 # Development stack: db + backend + frontend (hot reload)
 # Run: docker compose up --build
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "5"
+
 services:
   db:
     image: postgres:16-alpine
+    logging: *default-logging
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-recruitflow}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-recruitflow_dev_password}
@@ -20,6 +27,7 @@ services:
 
   backend:
     build: ./backend
+    logging: *default-logging
     environment:
       ENVIRONMENT: dev
       DEBUG: "true"
@@ -45,6 +53,7 @@ services:
 
   frontend:
     build: ./frontend
+    logging: *default-logging
     environment:
       - CHOKIDAR_USEPOLLING=true
     volumes:
