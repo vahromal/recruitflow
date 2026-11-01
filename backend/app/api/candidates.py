@@ -20,6 +20,7 @@ from app.schemas.candidate import (
     DuplicateInfo,
 )
 from app.services import candidate_service as svc
+from app.services.storage import get_storage
 
 router = APIRouter(prefix="/candidates", tags=["candidates"])
 
@@ -124,10 +125,7 @@ def delete_candidate(
     candidate = _get_candidate_or_404(db, candidate_id)
     check_owns_or_admin(user, candidate.owner_id)
     check_permission(user, Action.DELETE_CANDIDATE)
-    if candidate.resume_path:
-        path = Path(candidate.resume_path)
-        if path.is_file() and settings.storage_backend == "local":
-            path.unlink(missing_ok=True)
+    get_storage().delete(candidate.resume_path)
     db.delete(candidate)
     db.commit()
 
@@ -157,19 +155,14 @@ async def upload_resume(
             detail={"code": "too_large", "message": f"Max file size {settings.max_upload_size_mb} MB"},
         )
 
-    upload_dir = Path(settings.storage_local_path) / "resumes"
-    upload_dir.mkdir(parents=True, exist_ok=True)
-    stored_name = f"cand_{candidate_id}_{abs(hash(file.filename))}{suffix}"
-    dest = upload_dir / stored_name
-    dest.write_bytes(content)
+    # Storage layer: local volume now, S3-compatible later (see services/storage.py)
+    storage = get_storage()
+    stored_path, stored_name = storage.save("resumes", file.filename or "resume", content)
 
     # remove previous file
-    if candidate.resume_path:
-        old = Path(candidate.resume_path)
-        if old.is_file():
-            old.unlink(missing_ok=True)
+    storage.delete(candidate.resume_path)
 
-    candidate.resume_path = str(dest)
+    candidate.resume_path = stored_path
     candidate.resume_filename = file.filename
     db.commit()
     db.refresh(candidate)
@@ -186,7 +179,7 @@ def download_resume(
 
     candidate = _get_candidate_or_404(db, candidate_id)
     check_owns_or_admin(user, candidate.owner_id)
-    if not candidate.resume_path or not Path(candidate.resume_path).is_file():
+    if not candidate.resume_path or not get_storage().exists(candidate.resume_path):
         raise HTTPException(status_code=404, detail={"code": "not_found", "message": "No resume"})
     return FileResponse(
         candidate.resume_path,
