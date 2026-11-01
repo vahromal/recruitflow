@@ -15,7 +15,13 @@ export const authApi = {
     });
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
-      throw new Error(data?.error?.message ?? 'Неверный email или пароль');
+      const code = data?.error?.code;
+      const ru: Record<string, string> = {
+        invalid_credentials: 'Неверный email или пароль',
+        rate_limited: 'Слишком много попыток входа. Подождите пару минут.',
+        inactive: 'Учётная запись отключена администратором',
+      };
+      throw new Error(ru[code] ?? data?.error?.message ?? 'Не удалось войти');
     }
     const data = await res.json();
     return data.access_token as string;
