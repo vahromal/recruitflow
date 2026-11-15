@@ -16,7 +16,12 @@ Swagger-документация API доступна на `http://localhost:800
 | Что | Адрес |
 |---|---|
 | Сайт (GitHub Pages) | https://vahromal.github.io/recruitflow/ |
-| API (Render) | https://recruitflow-api-5770.onrender.com/health |
+| API (Render через прокси Netlify) | https://recruitflow-api-proxy.netlify.app/health |
+
+Прямой адрес Render (`https://recruitflow-api-5770.onrender.com`) заблокирован у части
+российских провайдеров, поэтому сайт обращается к API через небольшой прокси на Netlify
+(`deploy/netlify-proxy/_redirects`). Для посетителей это незаметно — открывается обычная
+ссылка GitHub Pages.
 
 Вход: `admin@recruitflow.local` / `Admin1234!` (данные создаются автоматически при первом
 старте сервиса).
