@@ -1,19 +1,40 @@
 // Typed wrappers around backend endpoints.
 import { api, downloadFile } from './client';
-import { apiUrl } from './base';
+import { apiUrl, fetchWithRetry } from './base';
+import { notifications } from '@mantine/notifications';
 import type {
   Activity, Card, Candidate, DashboardData, Page, User, Vacancy,
 } from './types';
 
 // --- auth (OAuth2 password flow: form-encoded) ---
+let wakeNoticeShown = false;
+
 export const authApi = {
   loginForm: async (username: string, password: string): Promise<string> => {
     const form = new URLSearchParams({ username, password });
-    const res = await fetch(apiUrl('/auth/login'), {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: form,
-    });
+    const res = await fetchWithRetry(
+      apiUrl('/auth/login'),
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: form,
+      },
+      {
+        // Login is safe to repeat, so retry while the free backend wakes up.
+        attempts: 7,
+        onRetry: () => {
+          if (wakeNoticeShown) return;
+          wakeNoticeShown = true;
+          notifications.show({
+            id: 'api-wake',
+            title: 'Сервер просыпается',
+            message: 'Бесплатный сервер засыпает после простоя. Подождите до минуты — вход выполнится автоматически.',
+            color: 'blue',
+            autoClose: 10000,
+          });
+        },
+      },
+    );
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
       const code = data?.error?.code;

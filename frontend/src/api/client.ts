@@ -1,5 +1,5 @@
 // Minimal typed API client with JWT support and unified error handling.
-import { apiUrl } from './base';
+import { apiUrl, fetchWithRetry } from './base';
 
 export class ApiError extends Error {
   code: string;
@@ -42,11 +42,13 @@ export async function api<T = unknown>(path: string, opts: RequestOptions = {}):
     body = JSON.stringify(opts.body);
   }
 
-  const res = await fetch(apiUrl(path), {
-    method: opts.method ?? 'GET',
-    headers,
-    body,
-  });
+  const method = opts.method ?? 'GET';
+  // Retry only idempotent requests: a POST that actually succeeded must not be
+  // repeated (it could create a duplicate record).
+  const idempotent = method === 'GET' || method === 'HEAD';
+  const res = idempotent
+    ? await fetchWithRetry(apiUrl(path), { method, headers, body })
+    : await fetch(apiUrl(path), { method, headers, body });
 
   if (opts.raw) {
     if (!res.ok) throw await toApiError(res);
