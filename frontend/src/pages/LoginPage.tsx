@@ -5,6 +5,7 @@ import {
 import { IconAlertCircle } from '@tabler/icons-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
+import { healthUrl } from '../api/base';
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -42,6 +43,12 @@ export default function LoginPage() {
             {error && (
               <Alert icon={<IconAlertCircle size={16} />} color="red">
                 {error}
+                <Text size="xs" mt={6} c="dimmed">
+                  Проверить доступность API:{' '}
+                  <a href={healthUrl()} target="_blank" rel="noreferrer">
+                    {healthUrl()}
+                  </a>
+                </Text>
               </Alert>
             )}
             <TextInput

@@ -12,29 +12,41 @@ let wakeNoticeShown = false;
 export const authApi = {
   loginForm: async (username: string, password: string): Promise<string> => {
     const form = new URLSearchParams({ username, password });
-    const res = await fetchWithRetry(
-      apiUrl('/auth/login'),
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: form,
-      },
-      {
-        // Login is safe to repeat, so retry while the free backend wakes up.
-        attempts: 7,
-        onRetry: () => {
-          if (wakeNoticeShown) return;
-          wakeNoticeShown = true;
-          notifications.show({
-            id: 'api-wake',
-            title: 'Сервер просыпается',
-            message: 'Бесплатный сервер засыпает после простоя. Подождите до минуты — вход выполнится автоматически.',
-            color: 'blue',
-            autoClose: 10000,
-          });
+    let res: Response;
+    try {
+      res = await fetchWithRetry(
+        apiUrl('/auth/login'),
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: form,
         },
-      },
-    );
+        {
+          // Login is safe to repeat, so retry while the free backend wakes up.
+          attempts: 7,
+          onRetry: () => {
+            if (wakeNoticeShown) return;
+            wakeNoticeShown = true;
+            notifications.show({
+              id: 'api-wake',
+              title: 'Сервер просыпается',
+              message: 'Бесплатный сервер засыпает после простоя. Подождите до минуты — вход выполнится автоматически.',
+              color: 'blue',
+              autoClose: 10000,
+            });
+          },
+        },
+      );
+    } catch (err) {
+      // fetch rejects with TypeError when the browser cannot reach the host at all
+      // (VPN/proxy, DNS, ad-blocker, offline). Server errors arrive as HTTP codes.
+      if (err instanceof TypeError) {
+        throw new Error(
+          'Браузер не может подключиться к серверу API. Проверьте VPN/прокси и блокировщик рекламы, попробуйте режим инкогнито.',
+        );
+      }
+      throw err;
+    }
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
       const code = data?.error?.code;
