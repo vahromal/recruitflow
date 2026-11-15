@@ -9,11 +9,14 @@ import '@mantine/notifications/styles.css';
 import App from './App';
 import { AuthProvider } from './hooks/useAuth';
 
+// On GitHub Pages the app is served from /<repo>/ — React Router needs the same prefix.
+const basename = import.meta.env.BASE_URL.replace(/\/$/, '') || '/';
+
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <MantineProvider defaultColorScheme="light">
       <Notifications position="top-right" />
-      <BrowserRouter>
+      <BrowserRouter basename={basename}>
         <AuthProvider>
           <App />
         </AuthProvider>

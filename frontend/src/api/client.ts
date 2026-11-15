@@ -1,4 +1,5 @@
 // Minimal typed API client with JWT support and unified error handling.
+import { apiUrl } from './base';
 
 export class ApiError extends Error {
   code: string;
@@ -41,7 +42,7 @@ export async function api<T = unknown>(path: string, opts: RequestOptions = {}):
     body = JSON.stringify(opts.body);
   }
 
-  const res = await fetch(`/api${path}`, {
+  const res = await fetch(apiUrl(path), {
     method: opts.method ?? 'GET',
     headers,
     body,

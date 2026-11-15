@@ -1,0 +1,62 @@
+# Render Blueprint: бесплатный API + PostgreSQL для демо-версии RecruitFlow.
+#
+# Как развернуть:
+#   1. https://dashboard.render.com/blueprints → New Blueprint Instance
+#   2. Выбрать репозиторий RecruitFlow (ветка main)
+#   3. Нажать Apply — Render создаст базу и сервис, затем выдаст адрес вида
+#      https://recruitflow-api.onrender.com
+#
+# Ограничения бесплатного тарифа Render (см. render.com/docs/free):
+#   - веб-сервис засыпает после 15 минут без запросов (первый запрос ~1 минута);
+#   - бесплатная PostgreSQL удаляется через 30 дней (данные пропадут);
+#   - файлы резюме хранятся во временной папке /tmp и теряются при перезапуске.
+databases:
+  - name: recruitflow-db
+    databaseName: recruitflow
+    user: recruitflow
+    plan: free
+
+services:
+  - type: web
+    name: recruitflow-api
+    runtime: python
+    plan: free
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: alembic upgrade head && python -m app.seed && uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.7"
+      - key: ENVIRONMENT
+        value: prod
+      # Демо-данные (admin + recruiter + примеры) создаются при первом старте.
+      - key: ALLOW_SEED
+        value: "true"
+      - key: SECRET_KEY
+        generateValue: true
+      - key: POSTGRES_HOST
+        fromDatabase:
+          name: recruitflow-db
+          property: host
+      - key: POSTGRES_PORT
+        fromDatabase:
+          name: recruitflow-db
+          property: port
+      - key: POSTGRES_USER
+        fromDatabase:
+          name: recruitflow-db
+          property: user
+      - key: POSTGRES_PASSWORD
+        fromDatabase:
+          name: recruitflow-db
+          property: password
+      - key: POSTGRES_DB
+        fromDatabase:
+          name: recruitflow-db
+          property: database
+      # Адрес фронтенда на GitHub Pages (без пути, только origin).
+      - key: CORS_ORIGINS
+        value: https://vahromal.github.io
+      - key: STORAGE_LOCAL_PATH
+        value: /tmp/uploads

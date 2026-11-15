@@ -14,6 +14,9 @@ class Settings(BaseSettings):
     app_name: str = "RecruitFlow"
     environment: Literal["dev", "test", "prod"] = "dev"
     debug: bool = False
+    # Demo data (admin/recruiter + sample records). Seed refuses to run in prod
+    # unless this flag is explicitly enabled (used by the public demo deployment).
+    allow_seed: bool = False
 
     # --- Database ---
     postgres_user: str = "recruitflow"

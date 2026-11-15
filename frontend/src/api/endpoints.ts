@@ -1,5 +1,6 @@
 // Typed wrappers around backend endpoints.
 import { api, downloadFile } from './client';
+import { apiUrl } from './base';
 import type {
   Activity, Card, Candidate, DashboardData, Page, User, Vacancy,
 } from './types';
@@ -8,7 +9,7 @@ import type {
 export const authApi = {
   loginForm: async (username: string, password: string): Promise<string> => {
     const form = new URLSearchParams({ username, password });
-    const res = await fetch('/api/auth/login', {
+    const res = await fetch(apiUrl('/auth/login'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: form,

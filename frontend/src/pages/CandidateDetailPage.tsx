@@ -7,6 +7,7 @@ import { IconDownload, IconFileUpload, IconTrash, IconLock } from '@tabler/icons
 import { useNavigate, useParams } from 'react-router-dom';
 import { notifications } from '@mantine/notifications';
 import { activitiesApi, candidatesApi, gdprApi, vacanciesApi } from '../api/endpoints';
+import { apiUrl } from '../api/base';
 import type { Activity, Candidate, Vacancy } from '../api/types';
 import { STAGES } from '../api/types';
 
@@ -125,7 +126,7 @@ export default function CandidateDetailPage() {
                 size="xs" variant="light"
                 leftSection={<IconDownload size={14} />}
                 onClick={async () => {
-                  const res = await fetch(`/api/candidates/${cid}/resume`, {
+                  const res = await fetch(apiUrl(`/candidates/${cid}/resume`), {
                     headers: { Authorization: `Bearer ${localStorage.getItem('rf_token') ?? ''}` },
                   });
                   const blob = await res.blob();

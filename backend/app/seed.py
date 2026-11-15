@@ -26,8 +26,8 @@ from app.models.user import User, UserRole  # noqa: E402
 
 
 def main() -> None:
-    if settings.environment == "prod":
-        print("REFUSED: seed is dev-only (ENVIRONMENT=prod)")
+    if settings.environment == "prod" and not settings.allow_seed:
+        print("REFUSED: seed is dev-only (ENVIRONMENT=prod, set ALLOW_SEED=true to override)")
         sys.exit(1)
 
     db = SessionLocal()
